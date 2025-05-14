@@ -83,6 +83,13 @@ const handleDownload = useCallback(async () => {
   }
 
   try {
+    if (!musicInfo.meta) {
+        musicInfo.meta = {
+          albumName: '',
+          picUrl: '',
+          _qualitys: {},
+        }
+      }
     const url = await getMusicUrl({ musicInfo, quality: selectedQuality, isRefresh: true });
     toast(url);
     if (!url) {
