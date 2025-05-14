@@ -19,6 +19,8 @@ import { downloadFile } from '@/utils/fs'
 import { toast, requestStoragePermission } from '@/utils/tools'
 import { getLyricInfo } from '@/core/music'
 import { getMusicUrl } from '@/core/music'
+import { Alert } from 'react-native'
+
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -61,7 +63,7 @@ export default memo(() => {
     }
     
     try {
-      console.log('开始下载，音乐信息:', musicInfo)
+      Alert.alert('音乐信息', JSON.stringify(musicInfo.meta, null, 2))
       // 确保 musicInfo 对象结构完整
       if (!musicInfo.meta) {
         musicInfo.meta = {
