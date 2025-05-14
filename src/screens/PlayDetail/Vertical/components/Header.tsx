@@ -1,6 +1,7 @@
 import { memo, useRef, useCallback } from 'react'
 
 import { View, StyleSheet } from 'react-native'
+import { PermissionsAndroid, Platform } from 'react-native'
 import RNFS from 'react-native-fs'
 
 import { pop } from '@/navigation'
@@ -49,11 +50,44 @@ export default memo(() => {
     popupRef.current?.show()
   }
 
+  const requestDownloadPermissions = async () => {
+    if (Platform.OS !== 'android') return true
+  
+    if (Platform.Version >= 33) {
+      const audioGranted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
+        {
+          title: '读取音频权限',
+          message: 'App 需要读取音频文件权限以保存歌曲',
+          buttonPositive: '允许',
+        },
+      )
+      return audioGranted === PermissionsAndroid.RESULTS.GRANTED
+    } else {
+      const writeGranted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: '存储权限',
+          message: 'App 需要存储权限以下载文件',
+          buttonPositive: '允许',
+        },
+      )
+      return writeGranted === PermissionsAndroid.RESULTS.GRANTED
+    }
+  }
+
   const handleDownload = useCallback(async () => {
     if (!musicInfo) {
       toast('音乐信息不存在')
       return
     }
+
+    const hasPermission = await requestDownloadPermissions()
+    if (!hasPermission) {
+      toast('请先授权存储权限')
+      return
+    }
+    
     try {
       console.log('开始下载，音乐信息:', musicInfo)
       // 确保 musicInfo 对象结构完整
@@ -70,14 +104,14 @@ export default memo(() => {
         return
       }
       const fileName = `${musicInfo.singer || '未知歌手'} - ${musicInfo.name || '未知歌曲'}`
-      const mp3Path = `${Dirs.MusicDir}/${fileName}.mp3`
+      const mp3Path = `${RNFS.DownloadDirectoryPath}/${fileName}.mp3`
       await downloadFile(url, mp3Path)
       toast('保存地址:' +  mp3Path)
       // 下载歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo })
         if (lyricInfo && lyricInfo.lyric) {
-          const lrcPath = `${Dirs.MusicDir}/${fileName}.lrc`
+          const lrcPath = `${RNFS.DownloadDirectoryPath}/${fileName}.lrc`
           try {
             await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
             console.log('歌词保存成功:', lrcPath)
