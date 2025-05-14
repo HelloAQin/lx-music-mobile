@@ -63,7 +63,6 @@ export default memo(() => {
     }
     
     try {
-      Alert.alert('音乐信息', JSON.stringify(musicInfo.meta, null, 2))
       // 确保 musicInfo 对象结构完整
       if (!musicInfo.meta) {
         musicInfo.meta = {
@@ -81,7 +80,7 @@ export default memo(() => {
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
       await downloadFile(url, mp3Path)
       const qualities = Object.keys(musicInfo.meta._qualitys || {})
-      toast('保存地址:' +  JSON.stringify(musicInfo.meta, null, 2))
+      Alert.alert('音乐信息', JSON.stringify(musicInfo.meta, null, 2))
       // 下载歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo })
