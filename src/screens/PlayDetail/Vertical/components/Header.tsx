@@ -55,43 +55,74 @@ export default memo(() => {
       toast('音乐信息不存在')
       return
     }
-
+  
     const hasPermission = await requestStoragePermission()
     if (!hasPermission) {
       toast('请先授权存储权限')
       return
     }
-    
+  
     try {
-      const url = await getMusicUrl({ musicInfo, isRefresh: true })
-      if (!url) {
-        toast('获取下载链接失败')
+      // 提取音质和大小信息
+      const qualities = Object.entries(musicInfo.meta?._qualitys || {}).map(([quality, details]) => ({
+        quality,
+        size: details.size || '未知大小',
+      }))
+  
+      if (qualities.length === 0) {
+        toast('没有可用的音质选项')
         return
       }
-      const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
-      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
-      await downloadFile(url, mp3Path)
-      Alert.alert('音乐信息', JSON.stringify(musicInfo, null, 2))
-      // 下载歌词
-      try {
-        const lyricInfo = await getLyricInfo({ musicInfo })
-        if (lyricInfo && lyricInfo.lyric) {
-          const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
-          try {
-            await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
-            console.log('歌词保存成功:', lrcPath)
-          } catch (e) {
-            console.error('歌词保存失败:', e)
-          }
-        }
-      } catch (e) {
-        console.error('获取歌词失败:', e)
-        // 歌词获取失败不影响主流程
-      }
-      toast('下载完成')
+  
+      // 弹出音质选择框
+      Alert.alert(
+        '选择音质',
+        '请选择要下载的音质：',
+        qualities.map(({ quality, size }) => ({
+          text: `${quality} (${size})`,
+          onPress: async () => {
+            try {
+              // 获取下载链接
+              const url = await getMusicUrl({ musicInfo, quality, isRefresh: true })
+              if (!url) {
+                toast('获取下载链接失败')
+                return
+              }
+  
+              // 构建文件路径
+              const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}_${quality}`
+              const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
+              await downloadFile(url, mp3Path)
+  
+              // 下载歌词
+              try {
+                const lyricInfo = await getLyricInfo({ musicInfo })
+                if (lyricInfo && lyricInfo.lyric) {
+                  const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
+                  try {
+                    await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
+                    console.log('歌词保存成功:', lrcPath)
+                  } catch (e) {
+                    console.error('歌词保存失败:', e)
+                  }
+                }
+              } catch (e) {
+                console.error('获取歌词失败:', e)
+                // 歌词获取失败不影响主流程
+              }
+  
+              toast('下载完成')
+            } catch (err) {
+              console.error('下载失败:', err)
+              toast('下载失败: ' + (err instanceof Error ? err.message : String(err)))
+            }
+          },
+        })),
+        { cancelable: true }
+      )
     } catch (err) {
-      console.error('下载失败:', err)
-      toast('下载失败: ' + (err instanceof Error ? err.message : String(err)))
+      console.error('处理下载逻辑失败:', err)
+      toast('处理下载逻辑失败: ' + (err instanceof Error ? err.message : String(err)))
     }
   }, [musicInfo])
 
