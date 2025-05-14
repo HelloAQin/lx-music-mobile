@@ -3,7 +3,6 @@ import { memo, useRef, useCallback } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { PermissionsAndroid, Platform } from 'react-native'
 import RNFS from 'react-native-fs'
-
 import { pop } from '@/navigation'
 import StatusBar from '@/components/common/StatusBar'
 import { useTheme } from '@/store/theme/hook'
@@ -17,7 +16,6 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import Btn from './Btn'
 import TimeoutExitBtn from './TimeoutExitBtn'
 import { downloadFile } from '@/utils/fs'
-import { Dirs } from 'react-native-file-system'
 import { toast } from '@/utils/tools'
 import { getLyricInfo } from '@/core/music'
 import { getMusicUrl } from '@/core/music'
@@ -63,8 +61,6 @@ export default memo(() => {
     return writeGranted === PermissionsAndroid.RESULTS.GRANTED
   }
     
-  
-
   const handleDownload = useCallback(async () => {
     if (!musicInfo) {
       toast('音乐信息不存在')
