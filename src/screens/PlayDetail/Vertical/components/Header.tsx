@@ -86,6 +86,7 @@ export default memo(() => {
           }
         }
       } catch (e) {
+        console.error('获取歌词失败:', e)
         // 歌词获取失败不影响主流程
       }
       toast('下载完成')
