@@ -72,6 +72,7 @@ export default memo(() => {
       }
 
       // 获取可用音质列表
+      toast(musicInfo.meta)
       const qualities = Object.keys(musicInfo.meta._qualitys || {})
       if (qualities.length === 0) {
         const url = await getMusicUrl({ musicInfo, isRefresh: true })
