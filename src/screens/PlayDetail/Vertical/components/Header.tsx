@@ -50,15 +50,27 @@ export default memo(() => {
   }
 
   const handleDownload = useCallback(async () => {
-    if (!musicInfo) return
+    if (!musicInfo) {
+      toast('音乐信息不存在')
+      return
+    }
     try {
+      console.log('开始下载，音乐信息:', musicInfo)
+      // 确保 musicInfo 对象结构完整
+      if (!musicInfo.meta) {
+        musicInfo.meta = {
+          albumName: '',
+          picUrl: '',
+          _qualitys: {},
+        }
+      }
       const url = await getMusicUrl({ musicInfo, isRefresh: true })
       if (!url) {
         toast('获取下载链接失败')
         return
       }
-      toast(url)
-      const fileName = `${musicInfo.singer} - ${musicInfo.name}`
+      console.log('获取到下载链接:', url)
+      const fileName = `${musicInfo.singer || '未知歌手'} - ${musicInfo.name || '未知歌曲'}`
       const mp3Path = `${Dirs.DocumentDir}/${fileName}.mp3`
       await downloadFile(url, mp3Path)
       // 下载歌词
@@ -74,12 +86,13 @@ export default memo(() => {
           }
         }
       } catch (e) {
+        console.error('获取歌词失败:', e)
         // 歌词获取失败不影响主流程
       }
       toast('下载完成')
     } catch (err) {
       console.error('下载失败:', err)
-      toast('下载失败' + err)
+      toast('下载失败: ' + (err instanceof Error ? err.message : String(err)))
     }
   }, [musicInfo])
 
