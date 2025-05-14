@@ -69,10 +69,10 @@ export default memo(() => {
         toast('获取下载链接失败')
         return
       }
-      console.log('获取到下载链接:', url)
       const fileName = `${musicInfo.singer || '未知歌手'} - ${musicInfo.name || '未知歌曲'}`
       const mp3Path = `${Dirs.DocumentDir}/${fileName}.mp3`
       await downloadFile(url, mp3Path)
+      toast('保存地址:' +  mp3Path)
       // 下载歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo })
