@@ -16,7 +16,7 @@ import { useStatusbarHeight } from '@/store/common/hook'
 import Btn from './Btn'
 import TimeoutExitBtn from './TimeoutExitBtn'
 import { downloadFile } from '@/utils/fs'
-import { toast } from '@/utils/tools'
+import { toast, requestStoragePermission } from '@/utils/tools'
 import { getLyricInfo } from '@/core/music'
 import { getMusicUrl } from '@/core/music'
 
@@ -47,19 +47,6 @@ export default memo(() => {
   const showSetting = () => {
     popupRef.current?.show()
   }
-
-  const requestDownloadPermissions = async () => {
-    if (Platform.OS !== 'android') return true
-    const writeGranted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-      {
-        title: '存储权限',
-        message: 'App 需要存储权限以下载文件',
-        buttonPositive: '允许',
-      },
-    )
-    return writeGranted === PermissionsAndroid.RESULTS.GRANTED
-  }
     
   const handleDownload = useCallback(async () => {
     if (!musicInfo) {
@@ -67,7 +54,7 @@ export default memo(() => {
       return
     }
 
-    const hasPermission = await requestDownloadPermissions()
+    const hasPermission = await requestStoragePermission()
     if (!hasPermission) {
       toast('请先授权存储权限')
       return
@@ -88,7 +75,7 @@ export default memo(() => {
         toast('获取下载链接失败')
         return
       }
-      const fileName = `${musicInfo.singer || '未知歌手'} - ${musicInfo.name || '未知歌曲'}`
+      const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
       await downloadFile(url, mp3Path)
       toast('保存地址:' +  mp3Path)
