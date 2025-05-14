@@ -70,14 +70,14 @@ export default memo(() => {
         return
       }
       const fileName = `${musicInfo.singer || '未知歌手'} - ${musicInfo.name || '未知歌曲'}`
-      const mp3Path = `${${RNFS.ExternalStorageDirectoryPath}}/Music/${fileName}.mp3`
+      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
       await downloadFile(url, mp3Path)
       toast('保存地址:' +  mp3Path)
       // 下载歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo })
         if (lyricInfo && lyricInfo.lyric) {
-          const lrcPath = `${${RNFS.ExternalStorageDirectoryPath}}/Music/${fileName}.lrc`
+          const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
           try {
             await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
             console.log('歌词保存成功:', lrcPath)
@@ -86,7 +86,6 @@ export default memo(() => {
           }
         }
       } catch (e) {
-        console.error('获取歌词失败:', e)
         // 歌词获取失败不影响主流程
       }
       toast('下载完成')
