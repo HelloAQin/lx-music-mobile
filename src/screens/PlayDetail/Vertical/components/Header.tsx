@@ -20,6 +20,7 @@ import { toast, requestStoragePermission } from '@/utils/tools'
 import { getLyricInfo } from '@/core/music'
 import { getMusicUrl } from '@/core/music'
 import { Alert } from 'react-native'
+import { getMusicType } from '@/utils/musicSdk/utils'
 
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
