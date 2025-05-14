@@ -80,7 +80,7 @@ export default memo(() => {
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
       await downloadFile(url, mp3Path)
       const qualities = Object.keys(musicInfo.meta._qualitys || {})
-      Alert.alert('音乐信息', JSON.stringify(musicInfo.meta, null, 2))
+      Alert.alert('音乐信息', JSON.stringify(musicInfo.metadata.musicInfo, null, 2))
       // 下载歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo })
