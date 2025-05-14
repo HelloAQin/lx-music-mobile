@@ -48,32 +48,33 @@ export default memo(() => {
   }
 
   const handleDownload = useCallback(async () => {
-  if (!musicInfo) return
-  try {
-    const url = await require('@/core/player/player').getMusicPlayUrl(musicInfo)
-    if (!url) {
-      toast('获取下载链接失败')
-      return
-    }
-    const fileName = `${musicInfo.singer} - ${musicInfo.name}`
-    const mp3Path = `${Dirs.DocumentDir}/${fileName}.mp3`
-    await downloadFile(url, mp3Path)
-    // 下载歌词
+    if (!musicInfo) return
     try {
-      const lyricInfo = await getLyricInfo({ musicInfo })
-      if (lyricInfo && lyricInfo.lyric) {
-        const lrcPath = `${Dirs.DocumentDir}/${fileName}.lrc`
-        await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
+      const url = await require('@/core/player/player').getMusicPlayUrl(musicInfo)
+      if (!url) {
+        toast('获取下载链接失败')
+        return
       }
-    } catch (e) {
-      // 歌词获取失败不影响主流程
+      toast(url)
+      const fileName = `${musicInfo.singer} - ${musicInfo.name}`
+      const mp3Path = `${Dirs.DocumentDir}/${fileName}.mp3`
+      await downloadFile(url, mp3Path)
+      // 下载歌词
+      try {
+        const lyricInfo = await getLyricInfo({ musicInfo })
+        if (lyricInfo && lyricInfo.lyric) {
+          const lrcPath = `${Dirs.DocumentDir}/${fileName}.lrc`
+          await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
+        }
+      } catch (e) {
+        // 歌词获取失败不影响主流程
+      }
+      toast('下载完成')
+    } catch (err) {
+      console.error('下载失败:', err)
+      toast('下载失败' + err)
     }
-    toast('下载完成')
-  } catch (err) {
-    console.error('下载失败:', err)
-    toast('下载失败' + err)
-  }
-}, [musicInfo])
+  }, [musicInfo])
 
   return (
     <View style={{ height: HEADER_HEIGHT + statusBarHeight, paddingTop: statusBarHeight }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
@@ -82,7 +83,7 @@ export default memo(() => {
         <Btn icon="chevron-left" onPress={back} />
         <Title />
         <TimeoutExitBtn />
-        <Btn icon="downloads" onPress={handleDownload} />
+        <Btn icon="download-2" onPress={handleDownload} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
