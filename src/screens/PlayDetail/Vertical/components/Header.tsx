@@ -78,7 +78,7 @@ export default memo(() => {
       const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
       await downloadFile(url, mp3Path)
-      toast('保存地址:' +  musicInfo.meta._qualitys)
+      toast('保存地址:' +  JSON.stringify(musicInfo.meta._qualitys, null, 2)))
       // 下载歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo })
