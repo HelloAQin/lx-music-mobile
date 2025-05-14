@@ -1,4 +1,4 @@
-import { memo, useRef } from 'react'
+import { memo, useRef, useCallback } from 'react'
 
 import { View, StyleSheet } from 'react-native'
 
@@ -14,6 +14,9 @@ import SettingPopup, { type SettingPopupType } from '../../components/SettingPop
 import { useStatusbarHeight } from '@/store/common/hook'
 import Btn from './Btn'
 import TimeoutExitBtn from './TimeoutExitBtn'
+import { downloadFile } from '@/utils/fs'
+import { Dirs } from 'react-native-file-system'
+import { toast } from '@/utils/tools'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -34,6 +37,7 @@ const Title = () => {
 export default memo(() => {
   const popupRef = useRef<SettingPopupType>(null)
   const statusBarHeight = useStatusbarHeight()
+  const musicInfo = usePlayerMusicInfo()
 
   const back = () => {
     void pop(commonState.componentIds.playDetail!)
@@ -42,6 +46,24 @@ export default memo(() => {
     popupRef.current?.show()
   }
 
+  const handleDownload = useCallback(async () => {
+    if (!musicInfo) return
+    try {
+      const url = await require('@/core/player/player').getMusicPlayUrl(musicInfo)
+      if (!url) {
+        toast('获取下载链接失败')
+        return
+      }
+      const fileName = `${musicInfo.singer} - ${musicInfo.name}.mp3`
+      const path = `${Dirs.DocumentDir}/${fileName}`
+      await downloadFile(url, path)
+      toast('下载完成')
+    } catch (err) {
+      console.error(err)
+      toast('下载失败')
+    }
+  }, [musicInfo])
+
   return (
     <View style={{ height: HEADER_HEIGHT + statusBarHeight, paddingTop: statusBarHeight }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
       <StatusBar />
@@ -49,6 +71,7 @@ export default memo(() => {
         <Btn icon="chevron-left" onPress={back} />
         <Title />
         <TimeoutExitBtn />
+        <Btn icon="download" onPress={handleDownload} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
