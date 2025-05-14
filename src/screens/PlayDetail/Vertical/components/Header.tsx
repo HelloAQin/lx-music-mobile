@@ -50,49 +50,68 @@ export default memo(() => {
     popupRef.current?.show()
   }
     
-  const handleDownload = useCallback(async () => {
-    if (!musicInfo) {
-      toast('音乐信息不存在')
-      return
+const handleDownload = useCallback(async () => {
+  if (!musicInfo) {
+    toast('音乐信息不存在');
+    return;
+  }
+
+  const hasPermission = await requestStoragePermission();
+  if (!hasPermission) {
+    toast('请先授权存储权限');
+    return;
+  }
+
+  // 选择音质
+  const qualityOptions = ['128k', '192k', '320k', 'flac', 'flac24bit'];
+  const selectedQuality = await new Promise<string | null>((resolve) => {
+    Alert.alert(
+      '选择音质',
+      '请选择要下载的音质',
+      qualityOptions.map((quality) => ({
+        text: quality,
+        onPress: () => resolve(quality),
+      })),
+      { cancelable: true, onDismiss: () => resolve(null) }
+    );
+  });
+
+  if (!selectedQuality) {
+    toast('未选择音质');
+    return;
+  }
+
+  try {
+    const url = await getMusicUrl({ musicInfo, isRefresh: true });
+    if (!url) {
+      toast('获取下载链接失败');
+      return;
     }
 
-    const hasPermission = await requestStoragePermission()
-    if (!hasPermission) {
-      toast('请先授权存储权限')
-      return
-    }
-    
+    const musicType = getMusicType(musicInfo, selectedQuality); // 根据选择音质获取最终音质类型
+    const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}-${musicType}`;
+    const filePath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`;
+
+    await downloadFile(url, filePath);
+
+    // 下载歌词
     try {
-      const url = await getMusicUrl({ musicInfo, isRefresh: true })
-      if (!url) {
-        toast('获取下载链接失败')
-        return
+      const lyricInfo = await getLyricInfo({ musicInfo });
+      if (lyricInfo && lyricInfo.lyric) {
+        const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`;
+        await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8');
+        console.log('歌词保存成功:', lrcPath);
       }
-      const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
-      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
-      await downloadFile(url, mp3Path)
-      // 下载歌词
-      try {
-        const lyricInfo = await getLyricInfo({ musicInfo })
-        if (lyricInfo && lyricInfo.lyric) {
-          const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
-          try {
-            await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
-            console.log('歌词保存成功:', lrcPath)
-          } catch (e) {
-            console.error('歌词保存失败:', e)
-          }
-        }
-      } catch (e) {
-        console.error('获取歌词失败:', e)
-        // 歌词获取失败不影响主流程
-      }
-      toast('下载完成')
-    } catch (err) {
-      console.error('下载失败:', err)
-      toast('下载失败: ' + (err instanceof Error ? err.message : String(err)))
+    } catch (e) {
+      console.error('获取歌词失败:', e);
     }
-  }, [musicInfo])
+
+    toast('下载完成');
+  } catch (err) {
+    console.error('下载失败:', err);
+    toast('下载失败: ' + (err instanceof Error ? err.message : String(err)));
+  }
+}, [musicInfo]);
 
   return (
     <View style={{ height: HEADER_HEIGHT + statusBarHeight, paddingTop: statusBarHeight }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
