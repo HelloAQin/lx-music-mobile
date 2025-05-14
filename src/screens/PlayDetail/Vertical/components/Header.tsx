@@ -76,7 +76,7 @@ export default memo(() => {
       toast('下载完成')
     } catch (err) {
       console.error(err)
-      toast('下载失败')
+      toast('下载失败' + err)
     }
   }, [musicInfo])
 
@@ -87,7 +87,7 @@ export default memo(() => {
         <Btn icon="chevron-left" onPress={back} />
         <Title />
         <TimeoutExitBtn />
-        <Btn icon="download" onPress={handleDownload} />
+        <Btn icon="downloads" onPress={handleDownload} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
