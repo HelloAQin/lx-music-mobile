@@ -84,6 +84,7 @@ const handleDownload = useCallback(async () => {
 
   try {
     const url = await getMusicUrl({ musicInfo, quality: selectedQuality, isRefresh: true });
+    toast(url);
     if (!url) {
       toast('获取下载链接失败');
       return;
