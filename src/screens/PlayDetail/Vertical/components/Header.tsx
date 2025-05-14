@@ -1,6 +1,7 @@
 import { memo, useRef, useCallback } from 'react'
 
 import { View, StyleSheet } from 'react-native'
+import RNFS from 'react-native-fs'
 
 import { pop } from '@/navigation'
 import StatusBar from '@/components/common/StatusBar'
@@ -18,6 +19,7 @@ import { downloadFile } from '@/utils/fs'
 import { Dirs } from 'react-native-file-system'
 import { toast } from '@/utils/tools'
 import { getLyricInfo } from '@/core/music'
+import { getMusicUrl } from '@/core/music'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -50,7 +52,7 @@ export default memo(() => {
   const handleDownload = useCallback(async () => {
     if (!musicInfo) return
     try {
-      const url = await require('@/core/player/player').getMusicPlayUrl(musicInfo)
+      const url = await getMusicUrl({ musicInfo, isRefresh: true })
       if (!url) {
         toast('获取下载链接失败')
         return
@@ -64,7 +66,12 @@ export default memo(() => {
         const lyricInfo = await getLyricInfo({ musicInfo })
         if (lyricInfo && lyricInfo.lyric) {
           const lrcPath = `${Dirs.DocumentDir}/${fileName}.lrc`
-          await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
+          try {
+            await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
+            console.log('歌词保存成功:', lrcPath)
+          } catch (e) {
+            console.error('歌词保存失败:', e)
+          }
         }
       } catch (e) {
         // 歌词获取失败不影响主流程
