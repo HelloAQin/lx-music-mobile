@@ -18,7 +18,7 @@ import TimeoutExitBtn from './TimeoutExitBtn'
 import { downloadFile } from '@/utils/fs'
 import { toast, requestStoragePermission } from '@/utils/tools'
 import { getLyricInfo } from '@/core/music'
-import { getMusicUrl } from '@/core/music'
+import { getMusicUrl } from '@/core/music/index'
 import { Alert } from 'react-native'
 import { getMusicType } from '@/utils/musicSdk/utils'
 
