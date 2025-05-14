@@ -18,6 +18,9 @@ jobs:
         run: |
           echo "KEYSTORE_STORE_FILE: ${KEYSTORE_STORE_FILE}"
           echo "KEYSTORE_KEY_ALIAS: ${KEYSTORE_KEY_ALIAS}"
+          echo ${{ secrets.KEYSTORE_STORE_FILE_BASE64 }} | base64 --decode > app/${{ secrets.KEYSTORE_STORE_FILE }}
+          ls ${{ secrets.KEYSTORE_STORE_FILE }}
+          echo 'OK'
         env:
           KEYSTORE_STORE_FILE: ${{ secrets.KEYSTORE_STORE_FILE }}
           KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
