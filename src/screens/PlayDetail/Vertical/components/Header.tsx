@@ -17,6 +17,7 @@ import TimeoutExitBtn from './TimeoutExitBtn'
 import { downloadFile } from '@/utils/fs'
 import { Dirs } from 'react-native-file-system'
 import { toast } from '@/utils/tools'
+import { getLyricInfo } from '@/core/music'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -54,9 +55,24 @@ export default memo(() => {
         toast('获取下载链接失败')
         return
       }
-      const fileName = `${musicInfo.singer} - ${musicInfo.name}.mp3`
-      const path = `${Dirs.DocumentDir}/${fileName}`
-      await downloadFile(url, path)
+      const fileName = `${musicInfo.singer} - ${musicInfo.name}`
+      const mp3Path = `${Dirs.DocumentDir}/${fileName}.mp3`
+      await downloadFile(url, mp3Path)
+      // 下载歌词
+      try {
+        const lyricInfo = await getLyricInfo({ musicInfo })
+        if (lyricInfo && lyricInfo.lyric) {
+          const lrcPath = `${Dirs.DocumentDir}/${fileName}.lrc`
+          // 保存歌词到本地
+          await downloadFile(
+            // 这里用data url方案保存文本内容
+            `data:text/plain;base64,${Buffer.from(lyricInfo.lyric, 'utf-8').toString('base64')}`,
+            lrcPath
+          )
+        }
+      } catch (e) {
+        // 歌词获取失败不影响主流程
+      }
       toast('下载完成')
     } catch (err) {
       console.error(err)
