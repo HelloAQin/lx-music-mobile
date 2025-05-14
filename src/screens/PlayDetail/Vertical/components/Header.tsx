@@ -52,29 +52,17 @@ export default memo(() => {
 
   const requestDownloadPermissions = async () => {
     if (Platform.OS !== 'android') return true
+    const writeGranted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+      {
+        title: '存储权限',
+        message: 'App 需要存储权限以下载文件',
+        buttonPositive: '允许',
+      },
+    )
+    return writeGranted === PermissionsAndroid.RESULTS.GRANTED
+    
   
-    if (Platform.Version >= 33) {
-      const audioGranted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.READ_MEDIA_AUDIO,
-        {
-          title: '读取音频权限',
-          message: 'App 需要读取音频文件权限以保存歌曲',
-          buttonPositive: '允许',
-        },
-      )
-      return audioGranted === PermissionsAndroid.RESULTS.GRANTED
-    } else {
-      const writeGranted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-        {
-          title: '存储权限',
-          message: 'App 需要存储权限以下载文件',
-          buttonPositive: '允许',
-        },
-      )
-      return writeGranted === PermissionsAndroid.RESULTS.GRANTED
-    }
-  }
 
   const handleDownload = useCallback(async () => {
     if (!musicInfo) {
