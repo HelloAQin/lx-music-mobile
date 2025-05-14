@@ -61,6 +61,7 @@ export default memo(() => {
       },
     )
     return writeGranted === PermissionsAndroid.RESULTS.GRANTED
+  }
     
   
 
