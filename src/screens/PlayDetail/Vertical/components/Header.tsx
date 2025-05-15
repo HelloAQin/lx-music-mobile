@@ -94,26 +94,38 @@ export default memo(() => {
     }
 
     try {
-      console.log('开始下载，音乐信息:', playMusicInfo.musicInfo)
+      const musicInfo = playMusicInfo.musicInfo
+      console.log('开始下载，音乐信息:', musicInfo)
+      console.log('请求音质:', quality)
+      console.log('支持的音质:', musicInfo.meta._qualitys)
+      
+      if (!musicInfo.meta._qualitys[quality as LX.Quality]) {
+        toast(`当前歌曲不支持 ${quality} 音质`)
+        return
+      }
+
       const url = await getMusicUrl({
-        musicInfo: playMusicInfo.musicInfo,
+        musicInfo: musicInfo,
         quality: quality as LX.Quality,
         isRefresh: true,
-        onToggleSource: () => {},
-        allowToggleSource: false,
+        onToggleSource: (musicInfo) => {
+          if (musicInfo) toast('尝试切换音源: ' + musicInfo.source)
+        },
+        allowToggleSource: true,
       })
       if (!url) {
         toast('获取下载链接失败')
         return
       }
-      const fileName = `${playMusicInfo.musicInfo.name || '未知歌曲'}-${playMusicInfo.musicInfo.singer || '未知歌手'}`
+      console.log('获取到下载链接:', url)
+      const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
       await downloadFile(url, mp3Path)
       toast('下载完成: ' + mp3Path)
 
       // 下载歌词
       try {
-        const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
+        const lyricInfo = await getLyricInfo({ musicInfo: musicInfo })
         if (lyricInfo && lyricInfo.lyric) {
           const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
           try {
