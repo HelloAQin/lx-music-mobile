@@ -109,7 +109,7 @@ export default memo(() => {
     }
 
     try {
-      toast('开始下载')
+      toast('开始下载, 音质: ' + quality)
       const url = await getMusicUrl({
         musicInfo: playMusicInfo.musicInfo,
         quality: quality as LX.Quality,
