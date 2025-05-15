@@ -119,7 +119,10 @@ export default memo(() => {
       }
       console.log('获取到下载链接:', url)
       const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
-      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
+      const actualQuality = url.includes('.flac') ? 'flac' : (url.includes('320') ? '320k' : '128k')
+      const extension = actualQuality === 'flac' ? 'flac' : 'mp3'
+      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${extension}`
+      
       await downloadFile(url, mp3Path)
       toast('下载完成: ' + mp3Path)
 
