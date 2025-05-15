@@ -47,6 +47,21 @@ export default memo(() => {
     popupRef.current?.show()
   }
 
+  const showMusicInfo = () => {
+    if (!playMusicInfo?.musicInfo) {
+      toast('音乐信息不存在')
+      return
+    }
+    const musicInfo = playMusicInfo.musicInfo as LX.Music.MusicInfoOnline
+    
+    Alert.alert(
+      '音乐信息',
+      JSON.stringify(musicInfo, null, 2),
+      [{ text: '确定', onPress: () => {} }],
+      { cancelable: true }
+    )
+  }
+
   const handleDownload = useCallback(async () => {
     if (!playMusicInfo?.musicInfo) {
       toast('音乐信息不存在')
@@ -94,41 +109,25 @@ export default memo(() => {
     }
 
     try {
-      const musicInfo = playMusicInfo.musicInfo
-      console.log('开始下载，音乐信息:', musicInfo)
-      console.log('请求音质:', quality)
-      console.log('支持的音质:', musicInfo.meta._qualitys)
-      
-      if (!musicInfo.meta._qualitys[quality as LX.Quality]) {
-        toast(`当前歌曲不支持 ${quality} 音质`)
-        return
-      }
-
+      toast('开始下载')
       const url = await getMusicUrl({
-        musicInfo: musicInfo,
+        musicInfo: playMusicInfo.musicInfo,
         quality: quality as LX.Quality,
         isRefresh: true,
-        onToggleSource: (musicInfo) => {
-          if (musicInfo) toast('尝试切换音源: ' + musicInfo.source)
-        },
-        allowToggleSource: true,
+        onToggleSource: () => {},
+        allowToggleSource: false,
       })
       if (!url) {
         toast('获取下载链接失败')
         return
       }
-      console.log('获取到下载链接:', url)
-      const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
-      const actualQuality = url.includes('.flac') ? 'flac' : (url.includes('320') ? '320k' : '128k')
-      const extension = actualQuality === 'flac' ? 'flac' : 'mp3'
-      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${extension}`
-      
+      const fileName = `${playMusicInfo.musicInfo.name || '未知歌曲'}-${playMusicInfo.musicInfo.singer || '未知歌手'}`
+      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
       await downloadFile(url, mp3Path)
-      toast('下载完成: ' + mp3Path)
 
       // 下载歌词
       try {
-        const lyricInfo = await getLyricInfo({ musicInfo: musicInfo })
+        const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
         if (lyricInfo && lyricInfo.lyric) {
           const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
           try {
@@ -142,7 +141,7 @@ export default memo(() => {
         console.error('获取歌词失败:', e)
         // 歌词获取失败不影响主流程
       }
-      toast('下载完成')
+      toast('下载完成: ' + mp3Path)
     } catch (err) {
       console.error('下载失败:', err)
       toast('下载失败: ' + (err instanceof Error ? err.message : String(err)))
@@ -157,6 +156,7 @@ export default memo(() => {
         <Title />
         <TimeoutExitBtn />
         <Btn icon="download-2" onPress={handleDownload} />
+        <Btn icon="download" onPress={showMusicInfo} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
