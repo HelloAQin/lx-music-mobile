@@ -156,7 +156,7 @@ export default memo(() => {
         <Title />
         <TimeoutExitBtn />
         <Btn icon="download-2" onPress={handleDownload} />
-        <Btn icon="download" onPress={showMusicInfo} />
+        <Btn icon="help" onPress={showMusicInfo} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
