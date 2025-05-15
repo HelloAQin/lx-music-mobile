@@ -1,6 +1,6 @@
 import { memo, useRef, useCallback } from 'react'
 
-import { View, StyleSheet } from 'react-native'
+import { View, StyleSheet, Alert } from 'react-native'
 import RNFS from 'react-native-fs'
 import { pop } from '@/navigation'
 import StatusBar from '@/components/common/StatusBar'
@@ -18,17 +18,15 @@ import { downloadFile } from '@/utils/fs'
 import { toast, requestStoragePermission } from '@/utils/tools'
 import { getLyricInfo } from '@/core/music'
 import { getMusicUrl } from '@/core/music'
-import { Alert } from 'react-native'
-import { getMusicType } from '@/utils/musicSdk/utils'
-
+import { QUALITYS } from '@/utils/musicSdk/utils'
+import musicSdk from '@/utils/musicSdk'
+import { toOldMusicInfo } from '@/utils'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
-
 
 const Title = () => {
   const theme = useTheme()
   const musicInfo = usePlayerMusicInfo()
-
 
   return (
     <View style={styles.titleContent}>
@@ -49,10 +47,15 @@ export default memo(() => {
   const showSetting = () => {
     popupRef.current?.show()
   }
-    
-  const handleDownload = useCallback(async () => {
+
+  const showQualitySelector = useCallback(async() => {
     if (!musicInfo) {
       toast('音乐信息不存在')
+      return
+    }
+
+    if (musicInfo.source == 'local') {
+      toast('本地音乐无需下载')
       return
     }
 
@@ -61,26 +64,66 @@ export default memo(() => {
       toast('请先授权存储权限')
       return
     }
+
+    try {
+      // 获取完整的音乐信息
+      const oldMusicInfo = toOldMusicInfo(musicInfo)
+      const sdk = musicSdk[musicInfo.source]
+      if (!sdk?.getMusicInfo) {
+        toast('不支持的音乐源')
+        return
+      }
+
+      let fullMusicInfo
+      if (musicInfo.source === 'kw') {
+        // 酷我需要特殊处理
+        const result = await sdk.getMusicInfo(oldMusicInfo).promise
+        fullMusicInfo = result
+      } else {
+        // 咪咕和酷狗可以直接获取
+        fullMusicInfo = await sdk.getMusicInfo(oldMusicInfo)
+      }
+
+      if (!fullMusicInfo?.types?.length) {
+        toast('没有可用的音质')
+        return
+      }
+
+      const qualityItems = fullMusicInfo.types.map(quality => ({
+        text: `${quality.type} (${quality.size || '未知大小'})`,
+        onPress: () => handleDownload(quality.type)
+      }))
+
+      Alert.alert(
+        '选择下载音质',
+        '请选择要下载的音质',
+        qualityItems,
+        { cancelable: true }
+      )
+    } catch (err) {
+      console.error(err)
+      toast('获取音质信息失败')
+    }
+  }, [musicInfo])
     
+  const handleDownload = useCallback(async(quality: string) => {
+    if (!musicInfo) {
+      toast('音乐信息不存在')
+      return
+    }
+
     try {
       console.log('开始下载，音乐信息:', musicInfo)
-      // 确保 musicInfo 对象结构完整
-      if (!musicInfo.meta) {
-        musicInfo.meta = {
-          albumName: '',
-          picUrl: '',
-          _qualitys: {},
-        }
-      }
-      const url = await getMusicUrl({ musicInfo, isRefresh: true })
+      const url = await getMusicUrl({ musicInfo, isRefresh: true, quality })
       if (!url) {
         toast('获取下载链接失败')
         return
       }
       const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
-      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
+      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
       await downloadFile(url, mp3Path)
-      toast('保存地址:' +  musicInfo.meta._qualitys)
+      toast('下载完成: ' + mp3Path)
+      
       // 下载歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo })
@@ -111,14 +154,13 @@ export default memo(() => {
         <Btn icon="chevron-left" onPress={back} />
         <Title />
         <TimeoutExitBtn />
-        <Btn icon="download-2" onPress={handleDownload} />
+        <Btn icon="download-2" onPress={showQualitySelector} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
     </View>
   )
 })
-
 
 const styles = StyleSheet.create({
   container: {
