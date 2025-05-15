@@ -1,133 +1,104 @@
-import { memo, useRef, useCallback } from 'react'
+import {
+  saveLyric,
+  saveMusicUrl,
+  getMusicUrl as getStoreMusicUrl,
+} from '@/utils/data'
+import { updateListMusics } from '@/core/list'
+import settingState from '@/store/setting/state'
 
-import { View, StyleSheet } from 'react-native'
-import { PermissionsAndroid, Platform } from 'react-native'
-import RNFS from 'react-native-fs'
-import { pop } from '@/navigation'
-import StatusBar from '@/components/common/StatusBar'
-import { useTheme } from '@/store/theme/hook'
-import { usePlayerMusicInfo } from '@/store/player/hook'
-import Text from '@/components/common/Text'
-import { scaleSizeH } from '@/utils/pixelRatio'
-import { HEADER_HEIGHT as _HEADER_HEIGHT, NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
-import commonState from '@/store/common/state'
-import SettingPopup, { type SettingPopupType } from '../../components/SettingPopup'
-import { useStatusbarHeight } from '@/store/common/hook'
-import Btn from './Btn'
-import TimeoutExitBtn from './TimeoutExitBtn'
-import { downloadFile } from '@/utils/fs'
-import { toast, requestStoragePermission } from '@/utils/tools'
-import { getLyricInfo } from '@/core/music'
-import { getMusicUrl } from '@/core/music/index'
+import {
+  buildLyricInfo,
+  getPlayQuality,
+  handleGetOnlineLyricInfo,
+  handleGetOnlineMusicUrl,
+  handleGetOnlinePicUrl,
+  getCachedLyricInfo,
+} from './utils'
 
-
-export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
-
-
-const Title = () => {
-  const theme = useTheme()
-  const musicInfo = usePlayerMusicInfo()
-
-
-  return (
-    <View style={styles.titleContent}>
-      <Text numberOfLines={1} style={styles.title}>{musicInfo.name}</Text>
-      <Text numberOfLines={1} style={styles.title} size={12} color={theme['c-font-label']}>{musicInfo.singer}</Text>
-    </View>
-  )
+/* export const setMusicUrl = ({ musicInfo, type, url }: {
+  musicInfo: LX.Music.MusicInfo
+  type: LX.Quality
+  url: string
+}) => {
+  saveMusicUrl(musicInfo, type, url)
 }
 
-export default memo(() => {
-  const popupRef = useRef<SettingPopupType>(null)
-  const statusBarHeight = useStatusbarHeight()
-  const musicInfo = usePlayerMusicInfo()
+export const setPic = (datas: {
+  listId: string
+  musicInfo: LX.Music.MusicInfo
+  url: string
+}) => {
+  datas.musicInfo.img = datas.url
+  updateMusicInfo({
+    listId: datas.listId,
+    id: datas.musicInfo.songmid,
+    data: { img: datas.url },
+    musicInfo: datas.musicInfo,
+  })
+}
+ */
 
-  const back = () => {
-    void pop(commonState.componentIds.playDetail!)
+
+export const getMusicUrl = async({ musicInfo, quality, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+  musicInfo: LX.Music.MusicInfoOnline
+  quality?: LX.Quality
+  isRefresh: boolean
+  allowToggleSource?: boolean
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+}): Promise<string> => {
+  // if (!musicInfo._types[type]) {
+  //   // 兼容旧版酷我源搜索列表过滤128k音质的bug
+  //   if (!(musicInfo.source == 'kw' && type == '128k')) throw new Error('该歌曲没有可播放的音频')
+
+  //   // return Promise.reject(new Error('该歌曲没有可播放的音频'))
+  // }
+  const targetQuality = quality ?? getPlayQuality(settingState.setting['player.playQuality'], musicInfo)
+  const cachedUrl = await getStoreMusicUrl(musicInfo, targetQuality)
+  if (cachedUrl && !isRefresh) return cachedUrl
+
+  return handleGetOnlineMusicUrl({ musicInfo, quality, onToggleSource, isRefresh, allowToggleSource }).then(({ url, quality: targetQuality, musicInfo: targetMusicInfo, isFromCache }) => {
+    if (targetMusicInfo.id != musicInfo.id && !isFromCache) void saveMusicUrl(targetMusicInfo, targetQuality, url)
+    void saveMusicUrl(musicInfo, targetQuality, url)
+    return url
+  })
+}
+
+export const getPicUrl = async({ musicInfo, listId, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+  musicInfo: LX.Music.MusicInfoOnline
+  listId?: string | null
+  isRefresh: boolean
+  allowToggleSource?: boolean
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+}): Promise<string> => {
+  if (musicInfo.meta.picUrl && !isRefresh) return musicInfo.meta.picUrl
+  return handleGetOnlinePicUrl({ musicInfo, onToggleSource, isRefresh, allowToggleSource }).then(({ url, musicInfo: targetMusicInfo, isFromCache }) => {
+    // picRequest = null
+    if (listId) {
+      musicInfo.meta.picUrl = url
+      void updateListMusics([{ id: listId, musicInfo }])
+    }
+    // savePic({ musicInfo, url, listId })
+    return url
+  })
+}
+export const getLyricInfo = async({ musicInfo, isRefresh, allowToggleSource = true, onToggleSource = () => {} }: {
+  musicInfo: LX.Music.MusicInfoOnline
+  isRefresh: boolean
+  allowToggleSource?: boolean
+  onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
+}): Promise<LX.Player.LyricInfo> => {
+  if (!isRefresh) {
+    const lyricInfo = await getCachedLyricInfo(musicInfo)
+    if (lyricInfo) return buildLyricInfo(lyricInfo)
   }
-  const showSetting = () => {
-    popupRef.current?.show()
-  }
-    
-  const handleDownload = useCallback(async () => {
-    if (!musicInfo) {
-      toast('音乐信息不存在')
-      return
-    }
 
-    const hasPermission = await requestStoragePermission()
-    if (!hasPermission) {
-      toast('请先授权存储权限')
-      return
-    }
-    
-    try {
-      const url = await getMusicUrl({ musicInfo, isRefresh: true })
-      if (!url) {
-        toast('获取下载链接失败')
-        return
-      }
-      const fileName = `${musicInfo.name || '未知歌曲'}-${musicInfo.singer || '未知歌手'}`
-      const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.mp3`
-      await downloadFile(url, mp3Path)
-      toast('保存地址:' +  mp3Path)
-      // 下载歌词
-      try {
-        const lyricInfo = await getLyricInfo({ musicInfo })
-        if (lyricInfo && lyricInfo.lyric) {
-          const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
-          try {
-            await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
-            console.log('歌词保存成功:', lrcPath)
-          } catch (e) {
-            console.error('歌词保存失败:', e)
-          }
-        }
-      } catch (e) {
-        console.error('获取歌词失败:', e)
-        // 歌词获取失败不影响主流程
-      }
-      toast('下载完成')
-    } catch (err) {
-      console.error('下载失败:', err)
-      toast('下载失败: ' + (err instanceof Error ? err.message : String(err)))
-    }
-  }, [musicInfo])
+  // lrcRequest = music[musicInfo.source].getLyric(musicInfo)
+  return handleGetOnlineLyricInfo({ musicInfo, onToggleSource, isRefresh, allowToggleSource }).then(async({ lyricInfo, musicInfo: targetMusicInfo, isFromCache }) => {
+    // lrcRequest = null
+    if (isFromCache) return buildLyricInfo(lyricInfo)
+    if (targetMusicInfo.id == musicInfo.id) void saveLyric(musicInfo, lyricInfo)
+    else void saveLyric(targetMusicInfo, lyricInfo)
 
-  return (
-    <View style={{ height: HEADER_HEIGHT + statusBarHeight, paddingTop: statusBarHeight }} nativeID={NAV_SHEAR_NATIVE_IDS.playDetail_header}>
-      <StatusBar />
-      <View style={styles.container}>
-        <Btn icon="chevron-left" onPress={back} />
-        <Title />
-        <TimeoutExitBtn />
-        <Btn icon="download-2" onPress={handleDownload} />
-        <Btn icon="slider" onPress={showSetting} />
-      </View>
-      <SettingPopup ref={popupRef} direction="vertical" />
-    </View>
-  )
-})
-
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    // justifyContent: 'center',
-    height: '100%',
-  },
-  titleContent: {
-    flex: 1,
-    paddingHorizontal: 5,
-    // alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    // flex: 1,
-    // textAlign: 'center',
-  },
-  icon: {
-    paddingLeft: 4,
-    paddingRight: 4,
-  },
-})
+    return buildLyricInfo(lyricInfo)
+  })
+}
