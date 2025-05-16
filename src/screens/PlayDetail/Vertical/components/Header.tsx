@@ -126,6 +126,19 @@ export default memo(() => {
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
       await downloadFile(url, mp3Path)
 
+      // 写入音乐元数据
+      try {
+        await writeMetadata(mp3Path, {
+          name: playMusicInfo.musicInfo.name,
+          singer: playMusicInfo.musicInfo.singer,
+          albumName: playMusicInfo.musicInfo.meta.albumName || '',
+        })
+        toast('音乐信息嵌入成功')
+      } catch (e) {
+        console.error('写入音乐信息失败:', e)
+        // 元数据写入失败不影响主流程
+      }
+
       // 获取并嵌入歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
