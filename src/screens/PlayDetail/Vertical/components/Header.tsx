@@ -127,7 +127,6 @@ export default memo(() => {
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
       
       // 2. 下载音乐文件
-      toast('开始下载音乐文件...')
       const { promise: downloadPromise } = downloadFile(url, mp3Path)
       await downloadPromise
 
@@ -140,7 +139,6 @@ export default memo(() => {
       })
 
       // 4. 获取并嵌入歌词
-      toast('正在获取歌词...')
       const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
       if (lyricInfo?.lyric) {
         toast('正在嵌入歌词...')
@@ -148,7 +146,6 @@ export default memo(() => {
       }
 
       // 5. 获取并嵌入封面
-      toast('正在获取封面...')
       const picUrl = await getPicUrl({ 
         musicInfo: playMusicInfo.musicInfo,
         isRefresh: true 
@@ -162,7 +159,6 @@ export default memo(() => {
         
         toast('正在嵌入封面...')
         await writePic(mp3Path, picPath)
-        await unlink(picPath)
       }
 
       toast('下载完成: ' + mp3Path)
