@@ -130,7 +130,6 @@ export default memo(() => {
       await downloadFile(url, mp3Path).promise
 
       // 3. 嵌入音乐元数据
-      toast('正在嵌入音乐信息...')
       await writeMetadata(mp3Path, {
         name: playMusicInfo.musicInfo.name,
         singer: playMusicInfo.musicInfo.singer,
@@ -138,14 +137,12 @@ export default memo(() => {
       })
 
       // 4. 获取并嵌入歌词
-      toast('正在嵌入歌词...')
       const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
       if (lyricInfo?.lyric) {
         await writeLyric(mp3Path, lyricInfo.lyric)
       }
 
       // 5. 获取并嵌入封面
-      toast('正在嵌入封面...')
       const picUrl = playMusicInfo.musicInfo.meta.picUrl
       if (picUrl) {
         const picPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.jpg`
