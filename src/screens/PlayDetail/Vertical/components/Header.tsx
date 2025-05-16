@@ -134,7 +134,7 @@ export default memo(() => {
           toast('歌词嵌入成功')
         }
       } catch (e) {
-        toast('获取或嵌入歌词失败:', e)
+        toast('获取或嵌入歌词失败:' + e)
         // 歌词获取失败不影响主流程
       }
 
@@ -153,7 +153,7 @@ export default memo(() => {
           toast('封面嵌入成功')
         }
       } catch (e) {
-        toast('获取或嵌入封面失败:', e)
+        toast('获取或嵌入封面失败:' + e)
         // 封面获取失败不影响主流程
       }
 
