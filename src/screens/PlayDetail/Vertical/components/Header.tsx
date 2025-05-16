@@ -162,7 +162,7 @@ export default memo(() => {
       // 5. 获取并嵌入封面
       try {
         toast('正在获取封面...')
-        const picUrl = playMusicInfo.musicInfo.meta
+        const picUrl = playMusicInfo.musicInfo.meta.picUrl
         if (picUrl) {
           const picPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.jpg`
           
