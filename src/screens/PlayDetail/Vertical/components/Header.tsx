@@ -150,29 +150,25 @@ export default memo(() => {
         toast('正在获取歌词...')
         const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
         if (lyricInfo?.lyric) {
-          await writeLyric(mp3Path, lyricInfo.lyric)
+          const writeLyricPromise = writeLyric(mp3Path, lyricInfo.lyric)
+          await writeLyricPromise
           toast('歌词嵌入成功')
         }
       } catch (e) {
         console.error('获取或嵌入歌词失败:', e)
-        toast('获取或嵌入歌词失败: ' + (e instanceof Error ? e.message : String(e)))
+        toast('获取或嵌入歌词失败: ' + e)
       }
 
       // 5. 获取并嵌入封面
       try {
         toast('正在获取封面...')
-        const picUrl = await getPicUrl({ 
-          musicInfo: playMusicInfo.musicInfo,
-          isRefresh: true 
-        })
+        const picUrl = playMusicInfo.musicInfo.meta
         if (picUrl) {
           const picPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.jpg`
           
-          toast('正在下载封面...')
           const { promise: picDownloadPromise } = downloadFile(picUrl, picPath)
           await picDownloadPromise
           
-          toast('正在嵌入封面...')
           await writePic(mp3Path, picPath)
           
           // 删除临时下载的封面文件
@@ -181,7 +177,7 @@ export default memo(() => {
         }
       } catch (e) {
         console.error('获取或嵌入封面失败:', e)
-        toast('获取或嵌入封面失败: ' + (e instanceof Error ? e.message : String(e)))
+        toast('获取或嵌入封面失败: ' + e)
       }
 
       toast('下载完成: ' + mp3Path)
