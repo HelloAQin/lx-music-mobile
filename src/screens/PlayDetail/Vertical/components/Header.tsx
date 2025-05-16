@@ -18,7 +18,7 @@ import { downloadFile } from '@/utils/fs'
 import { toast, requestStoragePermission } from '@/utils/tools'
 import { getLyricInfo, getMusicUrl, getPicUrl } from '@/core/music'
 import { QUALITYS } from '@/utils/musicSdk/utils'
-import { writeLyric, writePic } from '@/utils/localMediaMetadata'
+import { writeLyric, writePic, writeMetadata } from '@/utils/localMediaMetadata'
 import { unlink } from '@/utils/fs'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
