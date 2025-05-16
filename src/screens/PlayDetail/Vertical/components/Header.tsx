@@ -146,10 +146,7 @@ export default memo(() => {
 
       // 5. 获取并嵌入封面
       toast('正在嵌入封面...')
-      const picUrl = await getPicUrl({ 
-        musicInfo: playMusicInfo.musicInfo,
-        isRefresh: true 
-      })
+      const picUrl = playMusicInfo.musicInfo.meta.picUrl
       if (picUrl) {
         const picPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.jpg`
         await downloadFile(picUrl, picPath).promise
