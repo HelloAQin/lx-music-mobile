@@ -16,9 +16,10 @@ import Btn from './Btn'
 import TimeoutExitBtn from './TimeoutExitBtn'
 import { downloadFile } from '@/utils/fs'
 import { toast, requestStoragePermission } from '@/utils/tools'
-import { getLyricInfo } from '@/core/music'
-import { getMusicUrl } from '@/core/music'
+import { getLyricInfo, getMusicUrl, getPicUrl } from '@/core/music'
 import { QUALITYS } from '@/utils/musicSdk/utils'
+import { writeLyric, writePic } from '@/utils/localMediaMetadata'
+import { unlink } from '@/utils/fs'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -109,7 +110,7 @@ export default memo(() => {
     }
 
     try {
-      toast('开始下载, 音质: ' + quality)
+      toast('开始下载, 音质 ' + quality)
       const url = await getMusicUrl({
         musicInfo: playMusicInfo.musicInfo,
         quality: quality as LX.Quality,
@@ -125,22 +126,37 @@ export default memo(() => {
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
       await downloadFile(url, mp3Path)
 
-      // 下载歌词
+      // 获取并嵌入歌词
       try {
         const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
         if (lyricInfo && lyricInfo.lyric) {
-          const lrcPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.lrc`
-          try {
-            await RNFS.writeFile(lrcPath, lyricInfo.lyric, 'utf8')
-            console.log('歌词保存成功:', lrcPath)
-          } catch (e) {
-            console.error('歌词保存失败:', e)
-          }
+          await writeLyric(mp3Path, lyricInfo.lyric)
+          console.log('歌词嵌入成功')
         }
       } catch (e) {
-        console.error('获取歌词失败:', e)
+        console.error('获取或嵌入歌词失败:', e)
         // 歌词获取失败不影响主流程
       }
+
+      // 获取并嵌入封面
+      try {
+        const picUrl = await getPicUrl({ 
+          musicInfo: playMusicInfo.musicInfo,
+          isRefresh: true 
+        })
+        if (picUrl) {
+          const picPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.jpg`
+          await downloadFile(picUrl, picPath)
+          await writePic(mp3Path, picPath)
+          // 删除临时下载的封面文件
+          await unlink(picPath)
+          console.log('封面嵌入成功')
+        }
+      } catch (e) {
+        console.error('获取或嵌入封面失败:', e)
+        // 封面获取失败不影响主流程
+      }
+
       toast('下载完成: ' + mp3Path)
     } catch (err) {
       console.error('下载失败:', err)
