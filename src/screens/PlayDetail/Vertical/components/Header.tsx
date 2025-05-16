@@ -151,6 +151,10 @@ export default memo(() => {
         // 歌词获取失败不影响主流程
       }
 
+      if (typeof writePic !== 'function') {
+        toast('writePic 函数未定义')
+      }
+
       // 获取并嵌入封面
       try {
         const picUrl = await getPicUrl({ 
@@ -166,8 +170,7 @@ export default memo(() => {
           toast('封面嵌入成功')
         }
       } catch (e) {
-        toast('获取或嵌入封面失败:' + e)
-        // 封面获取失败不影响主流程
+        toast('获取或嵌入封面失败: ' + (e instanceof Error ? e.message : String(e)))
       }
 
       toast('下载完成: ' + mp3Path)
