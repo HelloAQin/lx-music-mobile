@@ -150,7 +150,6 @@ export default memo(() => {
         toast('正在获取歌词...')
         const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
         if (lyricInfo?.lyric) {
-          toast('正在嵌入歌词...')
           await writeLyric(mp3Path, lyricInfo.lyric)
           toast('歌词嵌入成功')
         }
