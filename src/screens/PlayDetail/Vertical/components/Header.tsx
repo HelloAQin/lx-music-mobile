@@ -127,38 +127,62 @@ export default memo(() => {
       const mp3Path = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.${quality.includes('flac') ? 'flac' : 'mp3'}`
       
       // 2. 下载音乐文件
+      toast('开始下载音乐文件...')
       const { promise: downloadPromise } = downloadFile(url, mp3Path)
       await downloadPromise
 
       // 3. 嵌入音乐元数据
-      toast('正在嵌入音乐信息...')
-      await writeMetadata(mp3Path, {
-        name: playMusicInfo.musicInfo.name,
-        singer: playMusicInfo.musicInfo.singer,
-        albumName: playMusicInfo.musicInfo.meta.albumName || '',
-      })
+      try {
+        toast('正在嵌入音乐信息...')
+        await writeMetadata(mp3Path, {
+          name: playMusicInfo.musicInfo.name,
+          singer: playMusicInfo.musicInfo.singer,
+          albumName: playMusicInfo.musicInfo.meta.albumName || '',
+        })
+        toast('音乐信息嵌入成功')
+      } catch (e) {
+        console.error('嵌入音乐信息失败:', e)
+        toast('嵌入音乐信息失败: ' + (e instanceof Error ? e.message : String(e)))
+      }
 
       // 4. 获取并嵌入歌词
-      const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
-      if (lyricInfo?.lyric) {
-        toast('正在嵌入歌词...')
-        await writeLyric(mp3Path, lyricInfo.lyric)
+      try {
+        toast('正在获取歌词...')
+        const lyricInfo = await getLyricInfo({ musicInfo: playMusicInfo.musicInfo })
+        if (lyricInfo?.lyric) {
+          toast('正在嵌入歌词...')
+          await writeLyric(mp3Path, lyricInfo.lyric)
+          toast('歌词嵌入成功')
+        }
+      } catch (e) {
+        console.error('获取或嵌入歌词失败:', e)
+        toast('获取或嵌入歌词失败: ' + (e instanceof Error ? e.message : String(e)))
       }
 
       // 5. 获取并嵌入封面
-      const picUrl = await getPicUrl({ 
-        musicInfo: playMusicInfo.musicInfo,
-        isRefresh: true 
-      })
-      if (picUrl) {
-        const picPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.jpg`
-        
-        toast('正在下载封面...')
-        const { promise: picDownloadPromise } = downloadFile(picUrl, picPath)
-        await picDownloadPromise
-        
-        toast('正在嵌入封面...')
-        await writePic(mp3Path, picPath)
+      try {
+        toast('正在获取封面...')
+        const picUrl = await getPicUrl({ 
+          musicInfo: playMusicInfo.musicInfo,
+          isRefresh: true 
+        })
+        if (picUrl) {
+          const picPath = `${RNFS.ExternalStorageDirectoryPath}/Music/${fileName}.jpg`
+          
+          toast('正在下载封面...')
+          const { promise: picDownloadPromise } = downloadFile(picUrl, picPath)
+          await picDownloadPromise
+          
+          toast('正在嵌入封面...')
+          await writePic(mp3Path, picPath)
+          
+          // 删除临时下载的封面文件
+          // await unlink(picPath)
+          toast('封面嵌入成功')
+        }
+      } catch (e) {
+        console.error('获取或嵌入封面失败:', e)
+        toast('获取或嵌入封面失败: ' + (e instanceof Error ? e.message : String(e)))
       }
 
       toast('下载完成: ' + mp3Path)
