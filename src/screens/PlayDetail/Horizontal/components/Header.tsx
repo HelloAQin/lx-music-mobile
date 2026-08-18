@@ -14,6 +14,7 @@ import CommentBtn from './CommentBtn'
 import Btn from './Btn'
 import SettingPopup, { type SettingPopupType } from '../../components/SettingPopup'
 import DesktopLyricBtn from './DesktopLyricBtn'
+import DownloadButton from '../../components/DownloadButton'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
 
@@ -49,6 +50,7 @@ export default memo(() => {
         <Title />
         <DesktopLyricBtn />
         <CommentBtn />
+        <DownloadButton renderButton={onPress => <Btn icon="download-2" onPress={onPress} />} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} position="left" direction="horizontal" />

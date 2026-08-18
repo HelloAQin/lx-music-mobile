@@ -1,7 +1,6 @@
 import { memo, useRef } from 'react'
 
 import { View, StyleSheet } from 'react-native'
-
 import { pop } from '@/navigation'
 import StatusBar from '@/components/common/StatusBar'
 import { useTheme } from '@/store/theme/hook'
@@ -14,14 +13,13 @@ import SettingPopup, { type SettingPopupType } from '../../components/SettingPop
 import { useStatusbarHeight } from '@/store/common/hook'
 import Btn from './Btn'
 import TimeoutExitBtn from './TimeoutExitBtn'
+import DownloadButton from '../../components/DownloadButton'
 
 export const HEADER_HEIGHT = scaleSizeH(_HEADER_HEIGHT)
-
 
 const Title = () => {
   const theme = useTheme()
   const musicInfo = usePlayerMusicInfo()
-
 
   return (
     <View style={styles.titleContent}>
@@ -38,6 +36,7 @@ export default memo(() => {
   const back = () => {
     void pop(commonState.componentIds.playDetail!)
   }
+
   const showSetting = () => {
     popupRef.current?.show()
   }
@@ -49,6 +48,7 @@ export default memo(() => {
         <Btn icon="chevron-left" onPress={back} />
         <Title />
         <TimeoutExitBtn />
+        <DownloadButton renderButton={onPress => <Btn icon="download-2" onPress={onPress} />} />
         <Btn icon="slider" onPress={showSetting} />
       </View>
       <SettingPopup ref={popupRef} direction="vertical" />
